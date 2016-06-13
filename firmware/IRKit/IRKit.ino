@@ -8,7 +8,7 @@
 
 #include <ESP8266WiFi.h>
 #include "config.h"
-#include "wifi.h" 
+#include "wifi.h"
 #include "ota.h"
 #include "httpServer.h"
 #include "setup.h"
@@ -31,6 +31,8 @@ void setup() {
   // OTA setup
   setupOTA();
 
+  // irkit.setMode(IR_STATION_MODE_NULL);
+
   // Mode setup
   irkit.setup();
 
@@ -43,21 +45,15 @@ void loop() {
   OTATask();
   serverTask();
   irTask();
-  /* display status */
-  if (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(PIN_LED1, HIGH);
-  } else {
-    digitalWrite(PIN_LED1, LOW);
-  }
   /* disconnect wifi by SW */
   static uint32_t timeStamp;
   if (digitalRead(PIN_BUTTON) == LOW) {
     if (millis() - timeStamp > 2000) {
       timeStamp = millis();
       println_dbg("Button long pressed");
-      connectWifi("WiFi-2.4GHz", "kashimamerda"); /*< for develop */
+//      connectWifi("WiFi-2.4GHz", "kashimamerda"); /*< for develop */
       irkit.setMode(IR_STATION_MODE_NULL);
-//      ESP.reset();
+      //      ESP.reset();
     }
   } else {
     timeStamp = millis();

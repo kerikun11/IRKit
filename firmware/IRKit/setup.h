@@ -13,12 +13,16 @@ class IRKit {
     uint8_t mode = IR_STATION_MODE_STA;
     String devicekey;
     String clienttoken;
-    String hostname = "irkit1234";
+    uint8_t security;
+    String ssid;
+    String password;
+    String hostname = "IRKit1234";
     String version = "1.0.0";
 
     void setup();
     void setMode(uint8_t newMode);
-    bool serialParser(String serial);
+    void generateHostname();
+    bool unserializer(String serial);
     void settingsRestoreFromFile();
     void settingsBackupToFile();
 

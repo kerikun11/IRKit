@@ -52,7 +52,7 @@ void setupServer(void) {
     WiFiClient client = server.client();
     client.println("HTTP/1.1 200 OK");
     client.println("Access-Control-Allow-Origin: *");
-    client.println("Server: IRKit/1.0.0");
+    client.println("Server: IRKit/" + irkit.version);
     client.println("Content-Type: text/plain");
     client.println("");
     println_dbg("End");
@@ -92,13 +92,8 @@ void setupServer(void) {
   });
   server.on("/wifi", HTTP_POST, []() {
     dispRequest();
-    irkit.serialParser(server.arg(0));
-    // for develop
-    //    String ssid = "WiFi-2.4GHz";
-    //    String password = "kashimamerda";
-    String ssid = "aterm-cce91e-g";
-    String password = "8919c780f175f";
-    if (connectWifi(ssid, password)) {
+    irkit.unserializer(server.arg(0));
+    if (connectWifi(irkit.ssid, irkit.password)) {
       println_dbg("connection successful");
       server.send(200);
 

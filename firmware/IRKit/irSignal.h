@@ -5,7 +5,7 @@
 
 #define IR_RECEIVE_TIMEOUT_US   200000
 
-#define RAWDATA_BUFFER_SIZE     400
+#define RAWDATA_BUFFER_SIZE     800
 
 enum IR_RECEIVER_STATE {
   IR_RECEIVER_OFF,
@@ -16,11 +16,11 @@ enum IR_RECEIVER_STATE {
 
 class IR_SIGNAL {
   public:
-    enum IR_RECEIVER_STATE state = IR_RECEIVER_READY;
+    volatile enum IR_RECEIVER_STATE state = IR_RECEIVER_READY;
 
-    uint16_t rawData[RAWDATA_BUFFER_SIZE];
-    uint16_t rawIndex;
-    uint32_t prev_us = 0;
+    volatile uint16_t rawData[RAWDATA_BUFFER_SIZE];
+    volatile uint16_t rawIndex;
+    volatile uint32_t prev_us = 0;
     String encoded;
 
     void send(String dataJson);
