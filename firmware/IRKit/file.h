@@ -4,6 +4,7 @@
 #include <ESP8266WiFi.h>
 
 void setupFile();
+
 bool writeStringToFile(String path, String dataString);
 bool getStringFromFile(String path, String& dataString);
 

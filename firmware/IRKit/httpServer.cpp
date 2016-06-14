@@ -25,10 +25,6 @@ void dispRequest() {
   }
 }
 
-//String extract(String target, String head, String tail) {
-//  return target.substring(target.indexOf(head) + head.length(), target.indexOf(tail, target.indexOf(head) + head.length()));
-//}
-
 String getContentType(String filename) {
   if (server.hasArg("download")) return "application/octet-stream";
   else if (filename.endsWith(".htm")) return "text/html";
@@ -93,20 +89,19 @@ void setupServer(void) {
   server.on("/wifi", HTTP_POST, []() {
     dispRequest();
     irkit.unserializer(server.arg(0));
+    server.send(200);
+
     if (connectWifi(irkit.ssid, irkit.password)) {
       println_dbg("connection successful");
-      server.send(200);
 
       String res;
-      res = httpPost("/d", "devicekey=" + irkit.devicekey + "&hostname=" + irkit.hostname, 1000);
+      res = httpPost("/d", "devicekey=" + irkit.devicekey + "&hostname=" + irkit.hostname, 3000);
       if (res.indexOf("200 OK") < 0) {
-        server.send(400);
         println_dbg("End");
         return;
       }
-      res = httpPost("/k", "devicekey=" + irkit.devicekey, 1000);
+      res = httpPost("/k", "devicekey=" + irkit.devicekey, 3000);
       if (res.indexOf("200 OK") < 0) {
-        server.send(400);
         println_dbg("End");
         return;
       }
@@ -124,7 +119,6 @@ void setupServer(void) {
       ESP.reset();
     } else {
       println_dbg("connection failed");
-      server.send(400);
       println_dbg("End");
     }
   });

@@ -3,10 +3,8 @@
 
 #include <ESP8266WiFi.h>
 
-void dispRequest();
 void serverTask();
-
-//String extract(String target, String head, String tail);
+void dispRequest();
 
 void setupServer(void);
 

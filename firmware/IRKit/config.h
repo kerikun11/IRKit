@@ -11,7 +11,7 @@
 #define PIN_LED1                16
 
 /* WiFi settings */
-#define WIFI_CONNECT_TIMEOUT    20 // unit: second
+#define WIFI_CONNECT_TIMEOUT    10 // unit: second
 
 /* SPIFFS saving path */
 #define SETTINGS_DATA_PATH      "/settings.json"

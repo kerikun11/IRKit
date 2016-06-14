@@ -31,8 +31,6 @@ void setup() {
   // OTA setup
   setupOTA();
 
-  // irkit.setMode(IR_STATION_MODE_NULL);
-
   // Mode setup
   irkit.setup();
 
@@ -51,9 +49,8 @@ void loop() {
     if (millis() - timeStamp > 2000) {
       timeStamp = millis();
       println_dbg("Button long pressed");
-//      connectWifi("WiFi-2.4GHz", "kashimamerda"); /*< for develop */
       irkit.setMode(IR_STATION_MODE_NULL);
-      //      ESP.reset();
+      ESP.reset();
     }
   } else {
     timeStamp = millis();
