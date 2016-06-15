@@ -86,6 +86,17 @@ void irTask() {
       });
       println_dbg("");
       String res = httpPost("/p?devicekey=" + irkit.devicekey + "&freq=38", signal.encoded, 1000);
+
+      DynamicJsonBuffer jsonBuffer;
+      JsonObject& root = jsonBuffer.createObject();
+      root["format"] = "raw";
+      root["freq"] = 38;
+      JsonArray& data = root.createNestedArray("data");
+      for (int i = 0; i < signal.rawIndex; i++) {
+        data.add(signal.rawData[i]);
+      }
+      root.printTo(signal.irJson);
+
       signal.state = IR_RECEIVER_READY;
       break;
   }

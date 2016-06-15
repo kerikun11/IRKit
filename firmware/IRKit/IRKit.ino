@@ -11,6 +11,7 @@
 #include "wifi.h"
 #include "ota.h"
 #include "httpServer.h"
+#include "httpsClient.h"
 #include "setup.h"
 
 void setup() {
@@ -42,6 +43,7 @@ void setup() {
 void loop() {
   OTATask();
   serverTask();
+  clientTask();
   irTask();
   /* disconnect wifi by SW */
   static uint32_t timeStamp;

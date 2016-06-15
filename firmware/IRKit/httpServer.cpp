@@ -55,17 +55,8 @@ void setupServer(void) {
   });
   server.on("/messages", HTTP_GET, []() {
     dispRequest();
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.createObject();
-    root["format"] = "raw";
-    root["freq"] = 38;
-    JsonArray& data = root.createNestedArray("data");
-    for (int i = 0; i < 32; i++) {
-      data.add(1234);
-    }
-    String res;
-    root.printTo(res);
-    server.send(200, "text/plain", res);
+    server.send(200, "text/plain", signal.irJson);
+    signal.irJson = "";
     println_dbg("End");
   });
   server.on("/messages", HTTP_POST, []() {

@@ -22,6 +22,7 @@ class IR_SIGNAL {
     volatile uint16_t rawIndex;
     volatile uint32_t prev_us = 0;
     String encoded;
+    String irJson;
 
     void send(String dataJson);
   private:

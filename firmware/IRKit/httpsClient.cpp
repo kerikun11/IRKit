@@ -2,6 +2,49 @@
 
 #include <ArduinoJson.h>
 #include "config.h"
+#include "setup.h"
+
+void clientTask() {
+  static int newer_than = 0;
+  static bool keep_alive = false;
+  static WiFiClient client;
+  
+  if (keep_alive == false) {
+    if (!client.connect(IRKIT_SERVER_HOST, IRKIT_SERVER_PORT)) {
+      println_dbg("connection failed");
+      return;
+    }
+    println_dbg("GET /m?devicekey=" + irkit.devicekey + "&newer_than=" + String(newer_than, DEC) + " HTTP/1.1");
+    println_dbg("User-Agent: IRKit/1.0.0");
+    println_dbg("Host: "IRKIT_SERVER_HOST);
+    println_dbg("");
+
+    client.println("GET /m?devicekey=" + irkit.devicekey + "&newer_than=" + String(newer_than, DEC) + " HTTP/1.1");
+    client.println("User-Agent: IRKit/1.0.0");
+    client.println("Host: "IRKIT_SERVER_HOST);
+    client.println("");
+
+    keep_alive = true;
+  } else {
+    if (client.available()) {
+      client.setTimeout(10);
+      String res = client.readString();
+      client.stop();
+      println_dbg("Response:");
+      println_dbg(res);
+      if (res.indexOf("{") > 0 && res.indexOf("}") > 0) {
+        res = res.substring(res.indexOf("\r\n\r\n"));
+        signal.state = IR_RECEIVER_OFF;
+        signal.send(res);
+        signal.state = IR_RECEIVER_READY;
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject& root = jsonBuffer.parseObject(res);
+        newer_than = (int)root["id"];
+      }
+      keep_alive = false;
+    }
+  }
+}
 
 String httpPost(String path, String body, uint16_t timeout) {
   print_dbg("connecting to ");

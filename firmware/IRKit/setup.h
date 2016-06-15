@@ -10,24 +10,26 @@
 
 class IRKit {
   public:
-    uint8_t mode = IR_STATION_MODE_STA;
+    uint8_t mode = IR_STATION_MODE_NULL;
     String devicekey;
     String clienttoken;
+
+    String hostname;
+    String version;
+
     uint8_t security;
     String ssid;
     String password;
-    String hostname = "IRKit1234";
-    String version = "1.0.0";
 
     void setup();
     void setMode(uint8_t newMode);
-    void generateHostname();
     bool unserializer(String serial);
-    void settingsRestoreFromFile();
-    void settingsBackupToFile();
 
   private:
+    void generateHostname();
 
+    void settingsRestoreFromFile();
+    void settingsBackupToFile();
 };
 
 extern class IRKit irkit;
