@@ -21,13 +21,13 @@ void setup() {
   println_dbg("Hello, I'm ESP-WROOM-02");
 
   // prepare GPIO
-  pinMode(PIN_LED1, OUTPUT);
+  pinMode(PIN_INDICATE_LED, OUTPUT);
   pinMode(PIN_IR_IN, INPUT);
   pinMode(PIN_IR_OUT, OUTPUT);
   pinMode(PIN_BUTTON, INPUT);
 
   // Setup Start
-  digitalWrite(PIN_LED1, HIGH);
+  digitalWrite(PIN_INDICATE_LED, HIGH);
 
   // OTA setup
   setupOTA();
@@ -36,7 +36,7 @@ void setup() {
   irkit.setup();
 
   // Setup Completed
-  digitalWrite(PIN_LED1, LOW);
+  digitalWrite(PIN_INDICATE_LED, LOW);
   println_dbg("Setup Completed");
 }
 

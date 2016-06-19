@@ -17,7 +17,7 @@ void irExternalISR() {
     case IR_RECEIVER_READY:
       signal.state = IR_RECEIVER_RECEIVING;
       signal.rawIndex = 0;
-      digitalWrite(PIN_LED1, HIGH);
+      digitalWrite(PIN_INDICATE_LED, HIGH);
       break;
     case IR_RECEIVER_RECEIVING:
       while (diff > 0xFFFF) {
@@ -54,7 +54,7 @@ void irTask() {
       if (diff > IR_RECEIVE_TIMEOUT_US) {
         signal.state = IR_RECEIVER_READING;
         println_dbg("End Receiving");
-        digitalWrite(PIN_LED1, LOW);
+        digitalWrite(PIN_INDICATE_LED, LOW);
       }
       break;
     case IR_RECEIVER_READING:
@@ -104,7 +104,7 @@ void irTask() {
 
 void IR_SIGNAL::send(String dataJson) {
   //  println_dbg(dataJson);
-  digitalWrite(PIN_LED1, HIGH);
+  digitalWrite(PIN_INDICATE_LED, HIGH);
   DynamicJsonBuffer jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(dataJson);
   noInterrupts();
@@ -121,7 +121,7 @@ void IR_SIGNAL::send(String dataJson) {
         delayMicroseconds(16);
       } while (int32_t(us + time - micros()) > 0);
     }
-    digitalWrite(PIN_LED1, LOW);
+    digitalWrite(PIN_INDICATE_LED, LOW);
   }
   interrupts();
   println_dbg("Send OK");
