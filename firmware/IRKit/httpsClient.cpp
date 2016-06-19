@@ -8,19 +8,20 @@ void clientTask() {
   static int newer_than = 0;
   static bool keep_alive = false;
   static WiFiClient client;
-  
+
   if (keep_alive == false) {
     if (!client.connect(IRKIT_SERVER_HOST, IRKIT_SERVER_PORT)) {
-      println_dbg("connection failed");
+      println_dbg("Error: server connection failed");
       return;
     }
+    println_dbg("Request: ");
     println_dbg("GET /m?devicekey=" + irkit.devicekey + "&newer_than=" + String(newer_than, DEC) + " HTTP/1.1");
-    println_dbg("User-Agent: IRKit/1.0.0");
+    println_dbg("User-Agent: IRKit/"IRKIT_VERSION);
     println_dbg("Host: "IRKIT_SERVER_HOST);
     println_dbg("");
 
     client.println("GET /m?devicekey=" + irkit.devicekey + "&newer_than=" + String(newer_than, DEC) + " HTTP/1.1");
-    client.println("User-Agent: IRKit/1.0.0");
+    client.println("User-Agent: IRKit/"IRKIT_VERSION);
     client.println("Host: "IRKIT_SERVER_HOST);
     client.println("");
 
@@ -32,7 +33,7 @@ void clientTask() {
       client.stop();
       println_dbg("Response:");
       println_dbg(res);
-      if (res.indexOf("{") > 0 && res.indexOf("}") > 0) {
+      if (res.indexOf("{") >= 0 && res.indexOf("}") >= 0) {
         res = res.substring(res.indexOf("\r\n\r\n"));
         signal.state = IR_RECEIVER_OFF;
         signal.send(res);
@@ -47,18 +48,13 @@ void clientTask() {
 }
 
 String httpPost(String path, String body, uint16_t timeout) {
-  print_dbg("connecting to ");
-  println_dbg(IRKIT_SERVER_HOST);
   WiFiClient client;
   if (!client.connect(IRKIT_SERVER_HOST, IRKIT_SERVER_PORT)) {
-    println_dbg("connection failed");
+    println_dbg("Error: server connection failed");
     return "";
   }
-  print_dbg("Path: ");
-  println_dbg(path);
-  print_dbg("Body: ");
-  println_dbg(body);
 
+  println_dbg("Request: ");
   println_dbg("POST " + path + " HTTP/1.1");
   println_dbg("User-Agent: IRKit/"IRKIT_VERSION);
   println_dbg("Host: "IRKIT_SERVER_HOST);
@@ -68,7 +64,7 @@ String httpPost(String path, String body, uint16_t timeout) {
   println_dbg(body);
 
   client.println("POST " + path + " HTTP/1.1");
-  client.println("User-Agent: IRKit/1.0.0");
+  client.println("User-Agent: IRKit/"IRKIT_VERSION);
   client.println("Host: "IRKIT_SERVER_HOST);
   client.println("Content-Length: " + String(body.length(), DEC));
   client.println("Content-Type: application/x-www-form-urlencoded");

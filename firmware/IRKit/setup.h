@@ -4,13 +4,13 @@
 #include <ESP8266WiFi.h>
 #include "irSignal.h"
 
-#define IR_STATION_MODE_NULL  0
-#define IR_STATION_MODE_STA   1
+#define IRKIT_MODE_NULL  0
+#define IRKIT_MODE_STA   1
 
 
 class IRKit {
   public:
-    uint8_t mode = IR_STATION_MODE_NULL;
+    uint8_t mode = IRKIT_MODE_NULL;
     String devicekey;
     String clienttoken;
 

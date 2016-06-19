@@ -107,20 +107,23 @@ void IR_SIGNAL::send(String dataJson) {
   digitalWrite(PIN_LED1, HIGH);
   DynamicJsonBuffer jsonBuffer;
   JsonObject& root = jsonBuffer.parseObject(dataJson);
-  for (uint16_t count = 0; count < root["data"].size(); count++) {
-    wdt_reset();
-    uint32_t us = micros();
-    uint16_t time = (uint16_t)root["data"][count];
-    time /= 2;
-    do {
-      digitalWrite(PIN_IR_OUT, !(count & 1));
-      delayMicroseconds(8);
-      digitalWrite(PIN_IR_OUT, 0);
-      delayMicroseconds(16);
-    } while (int32_t(us + time - micros()) > 0);
+  noInterrupts();
+  {
+    for (uint16_t count = 0; count < root["data"].size(); count++) {
+      wdt_reset();
+      uint32_t us = micros();
+      uint16_t time = (uint16_t)root["data"][count];
+      time /= 2;
+      do {
+        digitalWrite(PIN_IR_OUT, !(count & 1));
+        delayMicroseconds(8);
+        digitalWrite(PIN_IR_OUT, 0);
+        delayMicroseconds(16);
+      } while (int32_t(us + time - micros()) > 0);
+    }
+    digitalWrite(PIN_LED1, LOW);
   }
-  analogWrite(PIN_IR_OUT, 0);
-  digitalWrite(PIN_LED1, LOW);
+  interrupts();
   println_dbg("Send OK");
 }
 

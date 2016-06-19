@@ -4,9 +4,9 @@
 #include <ESP8266WiFi.h>
 
 void serverTask();
-void dispRequest();
 
 void setupServer(void);
+void setupAPServer(void);
 
 #endif
 

@@ -19,17 +19,18 @@ void IRKit::setup(void) {
   settingsRestoreFromFile();
 
   switch (mode) {
-    case IR_STATION_MODE_NULL:
+    case IRKIT_MODE_NULL:
       println_dbg("Boot Mode: NULL");
       configureAccesspoint(hostname, "");
+      setupAPServer();
       break;
-    case IR_STATION_MODE_STA:
+    case IRKIT_MODE_STA:
       println_dbg("Boot Mode: Station");
       connectCachedWifi();
       attachInterrupt(PIN_IR_IN, irExternalISR, CHANGE);
+      setupServer();
       break;
   }
-  setupServer();
 }
 
 void IRKit::setMode(uint8_t newMode) {

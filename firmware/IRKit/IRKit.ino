@@ -40,22 +40,28 @@ void setup() {
   println_dbg("Setup Completed");
 }
 
-void loop() {
-  OTATask();
-  serverTask();
-  clientTask();
-  irTask();
+void buttonTask() {
   /* disconnect wifi by SW */
   static uint32_t timeStamp;
   if (digitalRead(PIN_BUTTON) == LOW) {
     if (millis() - timeStamp > 2000) {
       timeStamp = millis();
       println_dbg("Button long pressed");
-      irkit.setMode(IR_STATION_MODE_NULL);
+      irkit.setMode(IRKIT_MODE_NULL);
       ESP.reset();
     }
   } else {
     timeStamp = millis();
+  }
+}
+
+void loop() {
+  OTATask();
+  serverTask();
+  if (irkit.mode == IRKIT_MODE_STA) {
+    buttonTask();
+    clientTask();
+    irTask();
   }
 }
 
