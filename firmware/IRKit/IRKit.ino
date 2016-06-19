@@ -8,9 +8,10 @@
 
 #include <ESP8266WiFi.h>
 #include "config.h"
-#include "wifi.h" 
+#include "wifi.h"
 #include "ota.h"
 #include "httpServer.h"
+#include "httpsClient.h"
 #include "setup.h"
 
 void setup() {
@@ -20,13 +21,13 @@ void setup() {
   println_dbg("Hello, I'm ESP-WROOM-02");
 
   // prepare GPIO
-  pinMode(PIN_LED1, OUTPUT);
+  pinMode(PIN_INDICATE_LED, OUTPUT);
   pinMode(PIN_IR_IN, INPUT);
   pinMode(PIN_IR_OUT, OUTPUT);
   pinMode(PIN_BUTTON, INPUT);
 
   // Setup Start
-  digitalWrite(PIN_LED1, HIGH);
+  digitalWrite(PIN_INDICATE_LED, HIGH);
 
   // OTA setup
   setupOTA();
@@ -35,32 +36,32 @@ void setup() {
   irkit.setup();
 
   // Setup Completed
-  digitalWrite(PIN_LED1, LOW);
+  digitalWrite(PIN_INDICATE_LED, LOW);
   println_dbg("Setup Completed");
 }
 
-void loop() {
-  OTATask();
-  serverTask();
-  irTask();
-  /* display status */
-  if (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(PIN_LED1, HIGH);
-  } else {
-    digitalWrite(PIN_LED1, LOW);
-  }
+void buttonTask() {
   /* disconnect wifi by SW */
   static uint32_t timeStamp;
   if (digitalRead(PIN_BUTTON) == LOW) {
     if (millis() - timeStamp > 2000) {
       timeStamp = millis();
       println_dbg("Button long pressed");
-      connectWifi("WiFi-2.4GHz", "kashimamerda"); /*< for develop */
-      irkit.setMode(IR_STATION_MODE_NULL);
-//      ESP.reset();
+      irkit.setMode(IRKIT_MODE_NULL);
+      ESP.reset();
     }
   } else {
     timeStamp = millis();
+  }
+}
+
+void loop() {
+  OTATask();
+  serverTask();
+  if (irkit.mode == IRKIT_MODE_STA) {
+    buttonTask();
+    clientTask();
+    irTask();
   }
 }
 

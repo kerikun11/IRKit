@@ -25,10 +25,6 @@ void dispRequest() {
   }
 }
 
-//String extract(String target, String head, String tail) {
-//  return target.substring(target.indexOf(head) + head.length(), target.indexOf(tail, target.indexOf(head) + head.length()));
-//}
-
 String getContentType(String filename) {
   if (server.hasArg("download")) return "application/octet-stream";
   else if (filename.endsWith(".htm")) return "text/html";
@@ -47,37 +43,23 @@ String getContentType(String filename) {
 }
 
 void setupServer(void) {
-  server.on("/", HTTP_GET, []() {
-    dispRequest();
-    WiFiClient client = server.client();
-    client.println("HTTP/1.1 200 OK");
-    client.println("Access-Control-Allow-Origin: *");
-    client.println("Server: IRKit/1.0.0");
-    client.println("Content-Type: text/plain");
-    client.println("");
-    println_dbg("End");
-  });
   server.on("/messages", HTTP_GET, []() {
     dispRequest();
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.createObject();
-    root["format"] = "raw";
-    root["freq"] = 38;
-    JsonArray& data = root.createNestedArray("data");
-    for (int i = 0; i < 32; i++) {
-      data.add(1234);
-    }
-    String res;
-    root.printTo(res);
-    server.send(200, "text/plain", res);
+    server.send(200, "text/plain", signal.irJson);
+    signal.irJson = "";
     println_dbg("End");
   });
   server.on("/messages", HTTP_POST, []() {
     dispRequest();
-    signal.state = IR_RECEIVER_OFF;
-    signal.send(server.arg(0));
-    signal.state = IR_RECEIVER_READY;
-    server.send(200);
+    String req = server.arg(0);
+    if ((req.indexOf("{") >= 0) && (req.indexOf("}") >= 0)) {
+      signal.state = IR_RECEIVER_OFF;
+      signal.send(req);
+      signal.state = IR_RECEIVER_READY;
+      server.send(200);
+    } else {
+      server.send(400);
+    }
     println_dbg("End");
   });
   server.on("/keys", HTTP_POST, []() {
@@ -89,49 +71,6 @@ void setupServer(void) {
     root.printTo(res);
     server.send(200, "text/plain", res);
     println_dbg("End");
-  });
-  server.on("/wifi", HTTP_POST, []() {
-    dispRequest();
-    irkit.serialParser(server.arg(0));
-    // for develop
-    //    String ssid = "WiFi-2.4GHz";
-    //    String password = "kashimamerda";
-    String ssid = "aterm-cce91e-g";
-    String password = "8919c780f175f";
-    if (connectWifi(ssid, password)) {
-      println_dbg("connection successful");
-      server.send(200);
-
-      String res;
-      res = httpPost("/d", "devicekey=" + irkit.devicekey + "&hostname=" + irkit.hostname, 1000);
-      if (res.indexOf("200 OK") < 0) {
-        server.send(400);
-        println_dbg("End");
-        return;
-      }
-      res = httpPost("/k", "devicekey=" + irkit.devicekey, 1000);
-      if (res.indexOf("200 OK") < 0) {
-        server.send(400);
-        println_dbg("End");
-        return;
-      }
-      res = res.substring(res.indexOf("\r\n\r\n"));
-      print_dbg("Json: ");
-      println_dbg(res);
-      DynamicJsonBuffer jsonBuffer;
-      JsonObject& root = jsonBuffer.parseObject(res);
-      irkit.clienttoken = (const char*)root["clienttoken"];
-      println_dbg("clinettoken: " + irkit.clienttoken);
-
-      irkit.setMode(IR_STATION_MODE_STA);
-      delay(100);
-      println_dbg("End");
-      ESP.reset();
-    } else {
-      println_dbg("connection failed");
-      server.send(400);
-      println_dbg("End");
-    }
   });
   server.onNotFound([]() {
     dispRequest();
@@ -153,5 +92,69 @@ void setupServer(void) {
   // Start TCP (HTTP) server
   server.begin();
   println_dbg("Server Listening");
+}
+
+void setupAPServer(void) {
+  server.on("/", HTTP_GET, []() {
+    dispRequest();
+    WiFiClient client = server.client();
+    client.println("HTTP/1.0 200 OK");
+    client.println("Access-Control-Allow-Origin: *");
+    client.println("Server: IRKit/" + irkit.version);
+    client.println("Content-Type: text/plain");
+    client.println("");
+    println_dbg("End");
+  });
+  server.on("/wifi", HTTP_POST, []() {
+    dispRequest();
+    irkit.unserializer(server.arg(0));
+
+    if (connectWifi(irkit.ssid, irkit.password)) {
+      println_dbg("connection successful");
+
+      String res;
+      res = httpPost("/d", "devicekey=" + irkit.devicekey + "&hostname=" + irkit.hostname, 3000);
+      if (res.indexOf("200 OK") < 0) {
+        println_dbg("End");
+        server.send(500);
+        return;
+      }
+      res = httpPost("/k", "devicekey=" + irkit.devicekey, 3000);
+      if (res.indexOf("200 OK") < 0) {
+        println_dbg("End");
+        server.send(500);
+        return;
+      }
+      res = res.substring(res.indexOf("\r\n\r\n"));
+      if ((res.indexOf("{") >= 0) && (res.indexOf("}") >= 0)) {
+        print_dbg("Json: ");
+        println_dbg(res);
+        DynamicJsonBuffer jsonBuffer;
+        JsonObject& root = jsonBuffer.parseObject(res);
+        irkit.clienttoken = (const char*)root["clienttoken"];
+        println_dbg("clinettoken: " + irkit.clienttoken);
+
+        irkit.setMode(IRKIT_MODE_STA);
+        server.send(200);
+        delay(100);
+        println_dbg("End");
+        ESP.reset();
+      }
+    } else {
+      println_dbg("connection failed");
+      println_dbg("End");
+      server.send(500);
+    }
+  });
+  server.onNotFound([]() {
+    dispRequest();
+    println_dbg("file not found");
+    server.send(404, "text/plain", "FileNotFound");
+    println_dbg("End");
+  });
+
+  // Start TCP (HTTP) server
+  server.begin();
+  println_dbg("AP Server Listening");
 }
 
