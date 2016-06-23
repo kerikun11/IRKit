@@ -126,10 +126,17 @@ bool IRKit::unserializer(String serial) {
   }
 
   if (serial[index++] != '/')return false;
+
   if (getStringFromHex(serial, index, ssid) == false)return false;
   if (getStringFromHex(serial, index, password) == false)return false;
-  String regdomain;
-  if (getStringFromHex(serial, index, regdomain) == false)return false;
+  int start = index;
+  int end = serial.indexOf('/', start);
+  devicekey = serial.substring(start, end);
+  index = end + 1;
+
+  int regdomain = serial[index++] - '0';
+  if (serial[index++] != '/')return false;
+
   String reserved2, reserved3, reserved4, reserved5, reserved6;
   if (getStringFromHex(serial, index, reserved2) == false)return false;
   if (getStringFromHex(serial, index, reserved3) == false)return false;
