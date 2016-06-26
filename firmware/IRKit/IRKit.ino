@@ -16,7 +16,7 @@
 
 void setup() {
   // Prepare Serial debug
-  Serial.begin(115200);
+  DEBUG_SERIAL.begin(DEBUG_SERIAL_BAUDRATE);
   println_dbg("");
   println_dbg("Hello, I'm ESP-WROOM-02");
 

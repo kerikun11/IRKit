@@ -24,17 +24,19 @@
 /* OTA Update */
 #define USE_OTA_UPDATE          true
 
-/* for Debug */
-#define SERIAL_DEBUG            true
+/* Debug Settings */
+#define DEBUG_PRINT_INFO        true     /*< デバック出力有無 */
+#define DEBUG_SERIAL            Serial  /*< デバック用シリアル */
+#define DEBUG_SERIAL_BAUDRATE   115200
 
-#if SERIAL_DEBUG == true
-# define print_dbg               Serial.print
-# define printf_dbg              Serial.printf
-# define println_dbg             Serial.println
+#if DEBUG_PRINT_INFO == true
+# define print_dbg              DEBUG_SERIAL.print
+# define printf_dbg             DEBUG_SERIAL.printf
+# define println_dbg            DEBUG_SERIAL.println
 #else
-# define print_dbg               // No Operation
-# define printf_dbg              // No Operation
-# define println_dbg             // No Operation
+# define print_dbg              // No Operation
+# define printf_dbg             // No Operation
+# define println_dbg            // No Operation
 #endif
 
 #endif
