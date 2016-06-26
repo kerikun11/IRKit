@@ -18,24 +18,55 @@ void IRKit::setup(void) {
   setupFile();
   settingsRestoreFromFile();
 
+  setupButtonInterrupt();
+
   switch (mode) {
     case IRKIT_MODE_NULL:
       println_dbg("Boot Mode: NULL");
-      configureAccesspoint(hostname, "");
+      WiFi.mode(WIFI_AP_STA);
+      configureAccesspoint(hostname, WIFI_AP_PASSWORD);
       setupAPServer();
       break;
     case IRKIT_MODE_STA:
       println_dbg("Boot Mode: Station");
-      connectCachedWifi();
+      WiFi.mode(WIFI_STA);
+      connectWifi(ssid, password);
       attachInterrupt(PIN_IR_IN, irExternalISR, CHANGE);
       setupServer();
       break;
   }
 }
 
+void IRKit::reset() {
+  ssid = "";
+  password = "";
+  devicekey = "";
+  clienttoken = "";
+  settingsBackupToFile();
+  setMode(IRKIT_MODE_NULL);
+  ESP.reset();
+}
+
 void IRKit::setMode(uint8_t newMode) {
   mode = newMode;
   settingsBackupToFile();
+}
+
+void IRKit::setupButtonInterrupt() {
+  attachInterrupt(PIN_BUTTON, []() {
+    static uint32_t prev_ms;
+    if (digitalRead(PIN_BUTTON) == LOW) {
+      prev_ms = millis();
+      println_dbg("the button pressed");
+    } else {
+      println_dbg("the button released");
+      if (millis() - prev_ms > 2000) {
+        println_dbg("the button long pressed");
+        irkit.reset();
+      }
+    }
+  }, CHANGE);
+  println_dbg("attached button interrupt");
 }
 
 void IRKit::generateHostname() {
@@ -92,19 +123,7 @@ bool getStringFromHex(String serial, int& index, String& result) {
 }
 
 bool IRKit::unserializer(String serial) {
-  enum UNSERIALIZE_STATE {
-    UNSERIALIZE_SECURITY,
-    UNSERIALIZE_SSID,
-    UNSERIALIZE_PASSWORD,
-    UNSERIALIZE_KEY,
-    UNSERIALIZE_REGDOMAIN,
-    UNSERIALIZE_RESERVED2,
-    UNSERIALIZE_RESERVED3,
-    UNSERIALIZE_RESERVED4,
-    UNSERIALIZE_RESERVED5,
-    UNSERIALIZE_RESERVED6,
-    UNSERIALIZE_CRC,
-  } state = UNSERIALIZE_SECURITY;
+  // [0248]/#{SSID}/#{Password}/#{Key}/#{RegDomain}//////#{CRC}
 
   int index = 0;
   switch (serial[index++]) {
@@ -144,36 +163,41 @@ bool IRKit::unserializer(String serial) {
   if (getStringFromHex(serial, index, reserved5) == false)return false;
   if (getStringFromHex(serial, index, reserved6) == false)return false;
 
-  uint8_t crc = x2c(serial[index++], serial[index++]);
-  println_dbg("CRC: " + String(crc, DEC));
-  if (crc == -1) {
-    println_dbg("Unserializer: crc character error");
-    return false;
-  }
-  uint8_t generatedCrc = crc8((uint8_t*)serial.c_str(), index - 2, CRC8INIT);
-  println_dbg("generated CRC: " + String(generatedCrc, DEC));
-
-  println_dbg("Security: " + String(security, DEC));
   println_dbg("SSID: " + ssid);
   println_dbg("PASSWORD: " + password);
 }
 
 void IRKit::settingsRestoreFromFile() {
   String s;
-  if (getStringFromFile(SETTINGS_DATA_PATH, s) == false) return;
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& data = jsonBuffer.parseObject(s);
-  mode = (int)data["mode"];
-  devicekey = (const char*)data["devicekey"];
-  clienttoken = (const char*)data["clienttoken"];
+  if (getStringFromFile(SETTINGS_DATA_PATH, s) == true) {
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& data = jsonBuffer.parseObject(s);
+    mode = (int)data["mode"];
+    ssid = (const char*)data["ssid"];
+    password = (const char*)data["password"];
+    devicekey = (const char*)data["devicekey"];
+    clienttoken = (const char*)data["clienttoken"];
+    uint8_t crc = (uint8_t)data["crc"];
+    String serial = String(mode, DEC) + ssid + password + devicekey + clienttoken;
+    if (crc == crc8((uint8_t*)serial.c_str(), serial.length(), CRC8INIT)) {
+      println_dbg("CRC8 OK");
+      return;
+    }
+  }
+  println_dbg("CRC8 difference");
+  reset();
 }
 
 void IRKit::settingsBackupToFile() {
   DynamicJsonBuffer jsonBuffer;
   JsonObject& data = jsonBuffer.createObject();
   data["mode"] = mode;
+  data["ssid"] = ssid;
+  data["password"] = password;
   data["devicekey"] = devicekey;
   data["clienttoken"] = clienttoken;
+  String serial = String(mode, DEC) + ssid + password + devicekey + clienttoken;
+  data["crc"] = crc8((uint8_t*)serial.c_str(), serial.length(), CRC8INIT);
   String str;
   data.printTo(str);
   writeStringToFile(SETTINGS_DATA_PATH, str);

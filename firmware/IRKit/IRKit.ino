@@ -24,7 +24,7 @@ void setup() {
   pinMode(PIN_INDICATE_LED, OUTPUT);
   pinMode(PIN_IR_IN, INPUT);
   pinMode(PIN_IR_OUT, OUTPUT);
-  pinMode(PIN_BUTTON, INPUT);
+  pinMode(PIN_BUTTON, INPUT_PULLUP);
 
   // Setup Start
   digitalWrite(PIN_INDICATE_LED, HIGH);
@@ -59,7 +59,6 @@ void loop() {
   OTATask();
   serverTask();
   if (irkit.mode == IRKIT_MODE_STA) {
-    buttonTask();
     clientTask();
     irTask();
   }

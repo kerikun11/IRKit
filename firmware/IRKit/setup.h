@@ -10,22 +10,24 @@
 
 class IRKit {
   public:
-    uint8_t mode = IRKIT_MODE_NULL;
-    String devicekey;
-    String clienttoken;
+    uint8_t mode;
 
     String hostname;
     String version;
+    String devicekey;
+    String clienttoken;
 
     uint8_t security;
     String ssid;
     String password;
 
     void setup();
+    void reset();
     void setMode(uint8_t newMode);
     bool unserializer(String serial);
 
   private:
+    void setupButtonInterrupt();
     void generateHostname();
 
     void settingsRestoreFromFile();
