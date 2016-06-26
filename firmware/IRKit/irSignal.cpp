@@ -103,7 +103,6 @@ void irTask() {
 }
 
 void IR_SIGNAL::send(String dataJson) {
-  //  println_dbg(dataJson);
   state = IR_RECEIVER_OFF;
   {
     digitalWrite(PIN_INDICATE_LED, HIGH);

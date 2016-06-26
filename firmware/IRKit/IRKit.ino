@@ -1,6 +1,5 @@
 /*
-   IR-station Ver.1.0.0
-   Infrared Remote Controller with ESP8266 WiFi Module
+   IRKit with ESP-WROOM-02
 
    Author:  kerikun11 (Github: kerikun11)
    Date:    2016.01.22
@@ -17,7 +16,7 @@ void setup() {
   // Prepare Serial debug
   DEBUG_SERIAL.begin(DEBUG_SERIAL_BAUDRATE);
   println_dbg("");
-  println_dbg("Hello, I'm ESP-WROOM-02");
+  println_dbg("Hello, I'm ESP-WROOM-02.");
 
   // prepare GPIO
   pinMode(PIN_INDICATE_LED, OUTPUT);
