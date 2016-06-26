@@ -8,7 +8,6 @@
 
 #include <ESP8266WiFi.h>
 #include "config.h"
-#include "wifi.h"
 #include "ota.h"
 #include "httpServer.h"
 #include "httpsClient.h"
@@ -38,21 +37,6 @@ void setup() {
   // Setup Completed
   digitalWrite(PIN_INDICATE_LED, LOW);
   println_dbg("Setup Completed");
-}
-
-void buttonTask() {
-  /* disconnect wifi by SW */
-  static uint32_t timeStamp;
-  if (digitalRead(PIN_BUTTON) == LOW) {
-    if (millis() - timeStamp > 2000) {
-      timeStamp = millis();
-      println_dbg("Button long pressed");
-      irkit.setMode(IRKIT_MODE_NULL);
-      ESP.reset();
-    }
-  } else {
-    timeStamp = millis();
-  }
 }
 
 void loop() {
