@@ -58,7 +58,7 @@ void irTask() {
       }
       break;
     case IR_RECEIVER_READING:
-      if (signal.rawIndex < 10) {
+      if (signal.rawIndex < 8) {
         println_dbg("noise");
         signal.state = IR_RECEIVER_READY;
         break;
@@ -71,8 +71,8 @@ void irTask() {
       }
       println_dbg("");
 
-      volatile uint8_t buff[RAWDATA_BUFFER_SIZE];
-      volatile struct irpacker_t packer_state;
+      uint8_t buff[RAWDATA_BUFFER_SIZE];
+      struct irpacker_t packer_state;
       irpacker_init(&packer_state, buff);
       for (int i = 0; i < signal.rawIndex; i++) {
         irpacker_pack(&packer_state, signal.rawData[i]);
@@ -104,26 +104,30 @@ void irTask() {
 
 void IR_SIGNAL::send(String dataJson) {
   //  println_dbg(dataJson);
-  digitalWrite(PIN_INDICATE_LED, HIGH);
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& root = jsonBuffer.parseObject(dataJson);
-  noInterrupts();
+  state = IR_RECEIVER_OFF;
   {
-    for (uint16_t count = 0; count < root["data"].size(); count++) {
-      wdt_reset();
-      uint32_t us = micros();
-      uint16_t time = (uint16_t)root["data"][count];
-      time /= 2;
-      do {
-        digitalWrite(PIN_IR_OUT, !(count & 1));
-        delayMicroseconds(8);
-        digitalWrite(PIN_IR_OUT, 0);
-        delayMicroseconds(16);
-      } while (int32_t(us + time - micros()) > 0);
+    digitalWrite(PIN_INDICATE_LED, HIGH);
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(dataJson);
+    noInterrupts();
+    {
+      for (uint16_t count = 0; count < root["data"].size(); count++) {
+        wdt_reset();
+        uint32_t us = micros();
+        uint16_t time = (uint16_t)root["data"][count];
+        time /= 2;
+        do {
+          digitalWrite(PIN_IR_OUT, !(count & 1));
+          delayMicroseconds(8);
+          digitalWrite(PIN_IR_OUT, 0);
+          delayMicroseconds(16);
+        } while (int32_t(us + time - micros()) > 0);
+      }
+      digitalWrite(PIN_INDICATE_LED, LOW);
     }
-    digitalWrite(PIN_INDICATE_LED, LOW);
+    interrupts();
   }
-  interrupts();
+  state = IR_RECEIVER_READY;
   println_dbg("Send OK");
 }
 

@@ -36,9 +36,7 @@ void setupServer(void) {
     dispRequest();
     String req = server.arg(0);
     if ((req.indexOf("{") >= 0) && (req.indexOf("}") >= 0)) {
-      signal.state = IR_RECEIVER_OFF;
       signal.send(req);
-      signal.state = IR_RECEIVER_READY;
       server.send(200);
     } else {
       server.send(400);
