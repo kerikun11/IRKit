@@ -30,8 +30,9 @@ class IRKit {
     void setupButtonInterrupt();
     void generateHostname();
 
-    void settingsRestoreFromFile();
-    void settingsBackupToFile();
+    String settingsCrcSerial(void);
+    bool settingsRestoreFromFile();
+    bool settingsBackupToFile();
 };
 
 extern class IRKit irkit;

@@ -16,9 +16,13 @@ void IRKit::setup(void) {
   generateHostname();
 
   setupFile();
-  settingsRestoreFromFile();
+  if (settingsRestoreFromFile() == false) reset();
 
   setupButtonInterrupt();
+
+#if USE_OTA_UPDATE == true
+  setupOTA();
+#endif
 
   switch (mode) {
     case IRKIT_MODE_NULL:
@@ -42,7 +46,6 @@ void IRKit::reset() {
   password = "";
   devicekey = "";
   clienttoken = "";
-  settingsBackupToFile();
   setMode(IRKIT_MODE_NULL);
   ESP.reset();
 }
@@ -82,7 +85,7 @@ void IRKit::generateHostname() {
   println_dbg(hostname);
 }
 
-char x2c(char highByte, char lowByte) {
+static char x2c(char highByte, char lowByte) {
   if (highByte >= '0' && highByte <= '9') {
     highByte -= '0';
   } else if (highByte >= 'A' && highByte <= 'F') {
@@ -108,7 +111,7 @@ char x2c(char highByte, char lowByte) {
   return ((highByte & 0xF) << 4) + (lowByte & 0xF);
 }
 
-bool getStringFromHex(String serial, int& index, String& result) {
+static bool getStringFromHex(String serial, int& index, String& result) {
   result = "";
   while (serial[index] != '/') {
     char character = x2c(serial[index++], serial[index++]);
@@ -167,28 +170,31 @@ bool IRKit::unserializer(String serial) {
   println_dbg("PASSWORD: " + password);
 }
 
-void IRKit::settingsRestoreFromFile() {
-  String s;
-  if (getStringFromFile(SETTINGS_DATA_PATH, s) == true) {
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& data = jsonBuffer.parseObject(s);
-    mode = (int)data["mode"];
-    ssid = (const char*)data["ssid"];
-    password = (const char*)data["password"];
-    devicekey = (const char*)data["devicekey"];
-    clienttoken = (const char*)data["clienttoken"];
-    uint8_t crc = (uint8_t)data["crc"];
-    String serial = String(mode, DEC) + ssid + password + devicekey + clienttoken;
-    if (crc == crc8((uint8_t*)serial.c_str(), serial.length(), CRC8INIT)) {
-      println_dbg("CRC8 OK");
-      return;
-    }
-  }
-  println_dbg("CRC8 difference");
-  reset();
+String IRKit::settingsCrcSerial(void) {
+  return String(mode, DEC) + ssid + password + devicekey + clienttoken;
 }
 
-void IRKit::settingsBackupToFile() {
+bool IRKit::settingsRestoreFromFile() {
+  String s;
+  if (getStringFromFile(SETTINGS_DATA_PATH, s) == false) return false;
+  DynamicJsonBuffer jsonBuffer;
+  JsonObject& data = jsonBuffer.parseObject(s);
+  mode = (int)data["mode"];
+  ssid = (const char*)data["ssid"];
+  password = (const char*)data["password"];
+  devicekey = (const char*)data["devicekey"];
+  clienttoken = (const char*)data["clienttoken"];
+  uint8_t crc = (uint8_t)data["crc"];
+  String serial = settingsCrcSerial();
+  if (crc != crc8((uint8_t*)serial.c_str(), serial.length(), CRC8INIT)) {
+    println_dbg("CRC8 difference");
+    return false;
+  }
+  println_dbg("CRC8 OK");
+  return true;
+}
+
+bool IRKit::settingsBackupToFile() {
   DynamicJsonBuffer jsonBuffer;
   JsonObject& data = jsonBuffer.createObject();
   data["mode"] = mode;
@@ -196,10 +202,10 @@ void IRKit::settingsBackupToFile() {
   data["password"] = password;
   data["devicekey"] = devicekey;
   data["clienttoken"] = clienttoken;
-  String serial = String(mode, DEC) + ssid + password + devicekey + clienttoken;
+  String serial = settingsCrcSerial();
   data["crc"] = crc8((uint8_t*)serial.c_str(), serial.length(), CRC8INIT);
   String str;
   data.printTo(str);
-  writeStringToFile(SETTINGS_DATA_PATH, str);
+  return writeStringToFile(SETTINGS_DATA_PATH, str);
 }
 
