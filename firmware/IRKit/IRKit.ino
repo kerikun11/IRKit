@@ -20,8 +20,6 @@ void setup() {
 
   // prepare GPIO
   pinMode(PIN_INDICATE_LED, OUTPUT);
-  pinMode(PIN_IR_IN, INPUT);
-  pinMode(PIN_IR_OUT, OUTPUT);
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 
   // Setup Start

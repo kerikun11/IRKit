@@ -36,6 +36,7 @@ class IRKit {
 };
 
 extern class IRKit irkit;
+extern class IR_SIGNAL signal;
 
 #endif
 

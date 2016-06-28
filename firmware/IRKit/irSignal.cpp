@@ -7,39 +7,75 @@
 #include "httpsClient.h"
 #include "setup.h"
 
-class IR_SIGNAL signal;
+IR_SIGNAL::IR_SIGNAL(int txPin, int rxPin) {
+  pinMode(txPin, OUTPUT);
+  pinMode(rxPin, INPUT);
+  attachInterrupt(rxPin, irExternalISR, CHANGE);
+}
 
-void irExternalISR() {
+void IR_SIGNAL::setState(enum IR_RECEIVER_STATE newState) {
+  state = newState;
+}
+
+void IR_SIGNAL::send(String dataJson) {
+  state = IR_RECEIVER_OFF;
+  {
+    digitalWrite(PIN_INDICATE_LED, HIGH);
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(dataJson);
+    noInterrupts();
+    {
+      for (uint16_t count = 0; count < root["data"].size(); count++) {
+        wdt_reset();
+        uint32_t us = micros();
+        uint16_t time = (uint16_t)root["data"][count];
+        time /= 2;
+        do {
+          digitalWrite(PIN_IR_OUT, !(count & 1));
+          delayMicroseconds(8);
+          digitalWrite(PIN_IR_OUT, 0);
+          delayMicroseconds(16);
+        } while (int32_t(us + time - micros()) > 0);
+      }
+      digitalWrite(PIN_INDICATE_LED, LOW);
+    }
+    interrupts();
+  }
+  state = IR_RECEIVER_READY;
+  println_dbg("Send OK");
+}
+
+void IR_SIGNAL::irExternalISR() {
   uint32_t us = micros();
-  uint32_t diff = (us - signal.prev_us) * 2;
+  uint32_t diff = (us - prev_us) * 2;
 
-  switch (signal.state) {
+  switch (state) {
     case IR_RECEIVER_READY:
-      signal.state = IR_RECEIVER_RECEIVING;
-      signal.rawIndex = 0;
+      state = IR_RECEIVER_RECEIVING;
+      rawIndex = 0;
       digitalWrite(PIN_INDICATE_LED, HIGH);
       break;
     case IR_RECEIVER_RECEIVING:
       while (diff > 0xFFFF) {
-        if (signal.rawIndex > RAWDATA_BUFFER_SIZE - 2) {
+        if (rawIndex > RAWDATA_BUFFER_SIZE - 2) {
           println_dbg("IR buffer overflow");
           break;
         }
-        signal.rawData[signal.rawIndex++] = 0xFFFF;
-        signal.rawData[signal.rawIndex++] = 0;
+        rawData[rawIndex++] = 0xFFFF;
+        rawData[rawIndex++] = 0;
         diff -= 0xFFFF;
       }
-      if (signal.rawIndex > RAWDATA_BUFFER_SIZE - 1) {
+      if (rawIndex > RAWDATA_BUFFER_SIZE - 1) {
         println_dbg("IR buffer overflow");
         break;
       }
-      signal.rawData[signal.rawIndex++] = diff;
+      rawData[rawIndex++] = diff;
       break;
     case IR_RECEIVER_READING:
       break;
   }
 
-  signal.prev_us = us;
+  prev_us = us;
 }
 
 void irTask() {
@@ -100,33 +136,5 @@ void irTask() {
       signal.state = IR_RECEIVER_READY;
       break;
   }
-}
-
-void IR_SIGNAL::send(String dataJson) {
-  state = IR_RECEIVER_OFF;
-  {
-    digitalWrite(PIN_INDICATE_LED, HIGH);
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(dataJson);
-    noInterrupts();
-    {
-      for (uint16_t count = 0; count < root["data"].size(); count++) {
-        wdt_reset();
-        uint32_t us = micros();
-        uint16_t time = (uint16_t)root["data"][count];
-        time /= 2;
-        do {
-          digitalWrite(PIN_IR_OUT, !(count & 1));
-          delayMicroseconds(8);
-          digitalWrite(PIN_IR_OUT, 0);
-          delayMicroseconds(16);
-        } while (int32_t(us + time - micros()) > 0);
-      }
-      digitalWrite(PIN_INDICATE_LED, LOW);
-    }
-    interrupts();
-  }
-  state = IR_RECEIVER_READY;
-  println_dbg("Send OK");
 }
 

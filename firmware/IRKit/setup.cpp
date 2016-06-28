@@ -9,6 +9,7 @@
 #include "CRC8.h"
 
 class IRKit irkit;
+class IR_SIGNAL signal(PIN_IR_OUT, PIN_IR_IN);
 
 void IRKit::setup(void) {
   wdt_reset();
@@ -35,8 +36,8 @@ void IRKit::setup(void) {
       println_dbg("Boot Mode: Station");
       WiFi.mode(WIFI_STA);
       connectWifi(ssid, password);
-      attachInterrupt(PIN_IR_IN, irExternalISR, CHANGE);
       setupServer();
+      signal.setState(IR_RECEIVER_READY);
       break;
   }
 }
