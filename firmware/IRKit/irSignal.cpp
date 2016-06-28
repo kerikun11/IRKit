@@ -1,16 +1,17 @@
 #include "irSignal.h"
 
 #include <ArduinoJson.h>
+#include <base64.h>
 #include "config.h"
 #include "IrPacker.h"
-#include "base64encoder.h"
 #include "httpsClient.h"
 #include "setup.h"
 
-IR_SIGNAL::IR_SIGNAL(int txPin, int rxPin) {
-  pinMode(txPin, OUTPUT);
-  pinMode(rxPin, INPUT);
-  attachInterrupt(rxPin, irExternalISR, CHANGE);
+IR_SIGNAL::IR_SIGNAL(uint8_t tx, uint8_t rx) {
+  txPin = tx;
+  rxPin = rx;
+  pinMode(tx, OUTPUT);
+  pinMode(rx, INPUT);
 }
 
 void IR_SIGNAL::setState(enum IR_RECEIVER_STATE newState) {
@@ -31,9 +32,9 @@ void IR_SIGNAL::send(String dataJson) {
         uint16_t time = (uint16_t)root["data"][count];
         time /= 2;
         do {
-          digitalWrite(PIN_IR_OUT, !(count & 1));
+          digitalWrite(txPin, !(count & 1));
           delayMicroseconds(8);
-          digitalWrite(PIN_IR_OUT, 0);
+          digitalWrite(txPin, 0);
           delayMicroseconds(16);
         } while (int32_t(us + time - micros()) > 0);
       }
@@ -45,7 +46,7 @@ void IR_SIGNAL::send(String dataJson) {
   println_dbg("Send OK");
 }
 
-void IR_SIGNAL::irExternalISR() {
+void IR_SIGNAL::isr() {
   uint32_t us = micros();
   uint32_t diff = (us - prev_us) * 2;
 
@@ -78,62 +79,60 @@ void IR_SIGNAL::irExternalISR() {
   prev_us = us;
 }
 
-void irTask() {
+void IR_SIGNAL::handle() {
   noInterrupts();
-  uint32_t diff = micros() - signal.prev_us;
+  uint32_t diff = micros() - prev_us;
   interrupts();
 
-  switch (signal.state) {
+  switch (state) {
     case IR_RECEIVER_READY:
       break;
     case IR_RECEIVER_RECEIVING:
       if (diff > IR_RECEIVE_TIMEOUT_US) {
-        signal.state = IR_RECEIVER_READING;
+        state = IR_RECEIVER_READING;
         println_dbg("End Receiving");
         digitalWrite(PIN_INDICATE_LED, LOW);
       }
       break;
     case IR_RECEIVER_READING:
-      if (signal.rawIndex < 8) {
+      if (rawIndex < 8) {
         println_dbg("noise");
-        signal.state = IR_RECEIVER_READY;
+        state = IR_RECEIVER_READY;
         break;
       }
 
       println_dbg("Raw Data: ");
-      for (int i = 0; i < signal.rawIndex; i++) {
-        print_dbg(signal.rawData[i], DEC);
-        if (i != signal.rawIndex - 1) print_dbg(",");
+      for (int i = 0; i < rawIndex; i++) {
+        print_dbg(rawData[i], DEC);
+        if (i != rawIndex - 1) print_dbg(",");
       }
       println_dbg("");
 
       uint8_t buff[RAWDATA_BUFFER_SIZE];
       struct irpacker_t packer_state;
       irpacker_init(&packer_state, buff);
-      for (int i = 0; i < signal.rawIndex; i++) {
-        irpacker_pack(&packer_state, signal.rawData[i]);
+      for (int i = 0; i < rawIndex; i++) {
+        irpacker_pack(&packer_state, rawData[i]);
       }
       irpacker_packend(&packer_state);
-      int length = irpacker_length(&packer_state);
 
-      signal.encoded = "";
-      base64_encode((const uint8_t*)buff, length, [](char encode) {
-        signal.encoded += (char)encode;
-      });
+      base64 binary;
+      String encoded = binary.encode((uint8_t*)buff, irpacker_length(&packer_state));
+
       println_dbg("");
-      String res = httpPost("/p?devicekey=" + irkit.devicekey + "&freq=38", signal.encoded, 1000);
+      String res = httpPost("/p?devicekey=" + irkit.devicekey + "&freq=38", encoded, 1000);
 
       DynamicJsonBuffer jsonBuffer;
       JsonObject& root = jsonBuffer.createObject();
       root["format"] = "raw";
       root["freq"] = 38;
       JsonArray& data = root.createNestedArray("data");
-      for (int i = 0; i < signal.rawIndex; i++) {
-        data.add(signal.rawData[i]);
+      for (int i = 0; i < rawIndex; i++) {
+        data.add(rawData[i]);
       }
-      root.printTo(signal.irJson);
+      root.printTo(irJson);
 
-      signal.state = IR_RECEIVER_READY;
+      state = IR_RECEIVER_READY;
       break;
   }
 }

@@ -16,23 +16,23 @@ enum IR_RECEIVER_STATE {
 
 class IR_SIGNAL {
   public:
-    IR_SIGNAL(int txPin, int rxPin);
-    volatile enum IR_RECEIVER_STATE state = IR_RECEIVER_OFF;
+    IR_SIGNAL(uint8_t tx, uint8_t rx);
+    uint8_t txPin, rxPin;
+    volatile enum IR_RECEIVER_STATE state = IR_RECEIVER_READY;
 
     volatile uint16_t rawIndex;
     volatile uint16_t rawData[RAWDATA_BUFFER_SIZE];
     volatile uint32_t prev_us = 0;
-    String encoded;
     String irJson;
 
     void setState(enum IR_RECEIVER_STATE newState);
+
     void send(String dataJson);
+
+    void isr();
+    void handle();
   private:
-    void irExternalISR();
 };
-
-void irTask();
-
 
 #endif
 

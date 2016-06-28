@@ -40,7 +40,7 @@ void loop() {
   serverTask();
   if (irkit.mode == IRKIT_MODE_STA) {
     clientTask();
-    irTask();
+    signal.handle();
   }
 }
 

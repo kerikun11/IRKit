@@ -37,7 +37,9 @@ void IRKit::setup(void) {
       WiFi.mode(WIFI_STA);
       connectWifi(ssid, password);
       setupServer();
-      signal.setState(IR_RECEIVER_READY);
+      attachInterrupt(signal.rxPin, []() {
+        signal.isr();
+      }, CHANGE);
       break;
   }
 }
