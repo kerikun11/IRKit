@@ -1,4 +1,4 @@
-#include "wifi.h" 
+#include "wifi.h"
 
 #include "config.h"
 
@@ -17,25 +17,23 @@ void configureAccesspoint(String ssid, String password) {
   println_dbg(WiFi.softAPIP());
 }
 
-bool connectWifi(String target_ssid, String target_pass) {
+bool connectWifi(String ssid, String password) {
   wdt_reset();
   int n = WiFi.scanNetworks();
   for (int i = 0; i < n; ++i) {
-    println_dbg("SSID: " + String(WiFi.SSID(i)));
-    if (target_ssid == String(WiFi.SSID(i))) {
-      break;
-    }
+    //println_dbg("SSID: " + String(WiFi.SSID(i)));
+    if (ssid == String(WiFi.SSID(i))) break;
     if (i == n - 1) {
       println_dbg("");
       print_dbg("Couldn't find SSID: ");
-      println_dbg(target_ssid);
+      println_dbg(ssid);
       return false;
     }
   }
   println_dbg("");
   print_dbg("Connecting to SSID: ");
-  println_dbg(target_ssid);
-  WiFi.begin(target_ssid.c_str(), target_pass.c_str());
+  println_dbg(ssid);
+  WiFi.begin(ssid.c_str(), password.c_str());
 
   // Wait for connection
   int timeout = 0;
@@ -53,7 +51,7 @@ bool connectWifi(String target_ssid, String target_pass) {
   }
   println_dbg("");
   print_dbg("Connected to ");
-  println_dbg(target_ssid);
+  println_dbg(ssid);
   print_dbg("IP address: ");
   println_dbg(WiFi.localIP());
 

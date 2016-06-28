@@ -170,7 +170,8 @@ bool IRKit::unserializer(String serial) {
   if (getStringFromHex(serial, index, reserved6) == false)return false;
 
   println_dbg("SSID: " + ssid);
-  println_dbg("PASSWORD: " + password);
+  println_dbg("password: " + password);
+  println_dbg("devicekey: " + devicekey);
 }
 
 String IRKit::settingsCrcSerial(void) {
