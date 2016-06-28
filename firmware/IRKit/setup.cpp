@@ -4,7 +4,6 @@
 #include "config.h"
 #include "httpServer.h"
 #include "wifi.h"
-#include "ota.h"
 #include "file.h"
 #include "CRC8.h"
 
@@ -20,10 +19,6 @@ void IRKit::setup(void) {
   if (settingsRestoreFromFile() == false) reset();
 
   setupButtonInterrupt();
-
-#if USE_OTA_UPDATE == true
-  setupOTA();
-#endif
 
   switch (mode) {
     case IRKIT_MODE_NULL:

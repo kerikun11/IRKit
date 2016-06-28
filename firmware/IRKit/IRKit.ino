@@ -25,6 +25,10 @@ void setup() {
   // Setup Start
   digitalWrite(PIN_INDICATE_LED, HIGH);
 
+#if USE_OTA_UPDATE == true
+  setupOTA();
+#endif
+
   // Mode setup
   irkit.setup();
 
