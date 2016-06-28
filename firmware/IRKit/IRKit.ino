@@ -27,9 +27,6 @@ void setup() {
   // Setup Start
   digitalWrite(PIN_INDICATE_LED, HIGH);
 
-  // OTA setup
-  setupOTA();
-
   // Mode setup
   irkit.setup();
 
@@ -39,7 +36,9 @@ void setup() {
 }
 
 void loop() {
+#if USE_OTA_UPDATE == true
   OTATask();
+#endif
   serverTask();
   if (irkit.mode == IRKIT_MODE_STA) {
     clientTask();
