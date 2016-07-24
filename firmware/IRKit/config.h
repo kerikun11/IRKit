@@ -8,7 +8,7 @@
 #define PIN_BUTTON              0
 #define PIN_IR_IN               5
 #define PIN_IR_OUT              14
-#define PIN_INDICATE_LED        16
+#define PIN_INDICATE_LED        13
 
 /* WiFi settings */
 #define WIFI_CONNECT_TIMEOUT    10 // unit: second

@@ -26,6 +26,16 @@ void dispRequest() {
 }
 
 void setupServer(void) {
+  server.on("/", HTTP_GET, []() {
+    dispRequest();
+    WiFiClient client = server.client();
+    client.println("HTTP/1.0 200 OK");
+    client.println("Access-Control-Allow-Origin: *");
+    client.println("Server: IRKit/" + irkit.version);
+    client.println("Content-Type: text/plain");
+    client.println("");
+    println_dbg("End");
+  });
   server.on("/messages", HTTP_GET, []() {
     dispRequest();
     server.send(200, "text/plain", signal.irJson);
@@ -50,7 +60,14 @@ void setupServer(void) {
     root["clienttoken"] = irkit.clienttoken;
     String res;
     root.printTo(res);
-    server.send(200, "text/plain", res);
+    WiFiClient client = server.client();
+    client.println("HTTP/1.0 200 OK");
+    client.println("Server: IRKit/" + irkit.version);
+    client.println("Host: "IRKIT_SERVER_HOST);
+    client.println("Content-Length: " + String(res.length(), DEC));
+    client.println("Content-Type: text/plain");
+    client.println("");
+    client.println(res);
     println_dbg("End");
   });
   server.onNotFound([]() {
